@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from mflow.models.basic import ZeroConv2d, ActNorm, InvConv2dLU, InvConv2d, InvRotationLU, InvRotation, ActNorm2D
+from mflow.models.basic import ZeroConv2d, ActNorm, InvConv2dLU, InvConv2d, InvRotationLU, InvRotation, ActNorm2D, WNConv2d
 from mflow.models.coupling import AffineCoupling, GraphAffineCoupling
-
+from mflow.models.utils import concat_elu
 
 class Flow(nn.Module):
     def __init__(self, in_channel, hidden_channels, affine=True, conv_lu=2, mask_swap=False):
@@ -48,45 +48,32 @@ class Flow(nn.Module):
 
         return input
 
+class GatedConv(nn.Module):
+    """Gated Convolution Block
+    Originally used by PixelCNN++ (https://arxiv.org/pdf/1701.05517).
+    Args:
+        num_channels (int): Number of channels in hidden activations.
+        drop_prob (float): Dropout probability.
+        aux_channels (int): Number of channels in optional auxiliary input.
+    """
+    def __init__(self, num_channels, drop_prob=0.):
+        super(GatedConv, self).__init__()
+        self.nlin = concat_elu
+        self.conv = WNConv2d(2 * num_channels, num_channels, kernel_size=3, padding=1) # 3x3 Conv
+        self.drop = nn.Dropout2d(drop_prob)
+        self.gate = WNConv2d(2 * num_channels, 2 * num_channels, kernel_size=1, padding=0) # 1x1 Conv
 
-# class Flow2(nn.Module): # delete
-#     def __init__(self, in_channel, hidden_channels, affine=True, conv_lu=True, mask_swap=0):
-#         super(Flow2, self).__init__()
-#
-#         # More stable to support more flows
-#         self.actnorm = ActNorm(in_channel)  # Delete ActNorm first, What I need is to norm adj, rather than along batch dim
-#
-#         # if conv_lu:
-#         #     self.invconv = InvConv2dLU(in_channel)
-#         #
-#         # else:
-#         #     self.invconv = InvConv2d(in_channel)
-#
-#         # May add more parameter to further control net in the coupling layer
-#         self.coupling = AffineCoupling(in_channel, hidden_channels, affine=affine, mask_swap=mask_swap)
-#
-#     def forward(self, input):
-#         out, logdet = self.actnorm(input)
-#         # out = input
-#         # logdet = 0
-#         # out, det1 = self.invconv(out)
-#         det1 = 0
-#         out, det2 = self.coupling(out)
-#
-#         logdet = logdet + det1
-#         if det2 is not None:
-#             logdet = logdet + det2
-#
-#         return out, logdet
-#
-#     def reverse(self, output):
-#         input = self.coupling.reverse(output)
-#         # input = self.invconv.reverse(input)
-#         input = self.actnorm.reverse(input)
-#
-#         return input
+    def forward(self, x, aux=None):
+        x = self.nlin(x)
+        x = self.conv(x)
+        x = self.nlin(x)
+        x = self.drop(x)
+        x = self.gate(x)
+        a, b = x.chunk(2, dim=1)
+        x = a * torch.sigmoid(b)
 
-
+        return x
+    
 class FlowOnGraph(nn.Module):
     def __init__(self, n_node, in_dim, hidden_dim_dict, masked_row, affine=True):
         super(FlowOnGraph, self).__init__()
@@ -122,7 +109,7 @@ class FlowOnGraph(nn.Module):
         return input
 
 
-class Block(nn.Module):
+class Block(nn.Module): # for Glow
     def __init__(self, in_channel, n_flow, squeeze_fold, hidden_channels, affine=True, conv_lu=2):  # in_channel: 3, n_flow: 32
         super(Block, self).__init__()
         # squeeze_fold = 3 for qm9 (bs,4,9,9), squeeze_fold = 2 for zinc (bs, 4, 38, 38)
@@ -190,72 +177,6 @@ class Block(nn.Module):
         unsqueezed = unsqueezed.permute(0, 1, 4, 2, 5, 3).contiguous()
         out = unsqueezed.view(b_size, n_channel // (fold * fold), height * fold, width * fold)
         return out
-
-
-# class Block2(nn.Module): # delete
-#     def __init__(self, in_channel, n_flow, squeeze_fold, hidden_channels, affine=True, conv_lu=True):  # in_channel: 3, n_flow: 32
-#         super(Block2, self).__init__()
-#         # squeeze_fold = 3 for qm9 (bs,4,9,9), squeeze_fold = 2 for zinc (bs, 4, 38, 38)
-#         #                          (bs,4*3*3,3,3)                        (bs,4*2*2,19,19)
-#         self.squeeze_fold = squeeze_fold
-#         squeeze_dim = in_channel * self.squeeze_fold * self.squeeze_fold
-#
-#         self.flows = nn.ModuleList()
-#         for i in range(n_flow):
-#             self.flows.append(Flow2(squeeze_dim, hidden_channels, affine=affine, conv_lu=conv_lu, mask_type=i % 2))
-#
-#         self.prior = ZeroConv2d(squeeze_dim, squeeze_dim*2)
-#
-#     def forward(self, input):
-#         out = self._squeeze(input)
-#         logdet = 0
-#
-#         for flow in self.flows:
-#             out, det = flow(out)
-#             logdet = logdet + det
-#
-#         out = self._unsqueeze(out)
-#         return out, logdet  # , log_p, z_new
-#
-#     def reverse(self, output):  # , eps=None, reconstruct=False):
-#         input = self._squeeze(output)
-#
-#         for flow in self.flows[::-1]:
-#             input = flow.reverse(input)
-#
-#         unsqueezed = self._unsqueeze(input)
-#         return unsqueezed
-#
-#     def _squeeze(self, x):
-#         """Trade spatial extent for channels. In forward direction, convert each
-#         1x4x4 volume of input into a 4x1x1 volume of output.
-#
-#         Args:
-#             x (torch.Tensor): Input to squeeze or unsqueeze.
-#             reverse (bool): Reverse the operation, i.e., unsqueeze.
-#
-#         Returns:
-#             x (torch.Tensor): Squeezed or unsqueezed tensor.
-#         """
-#         # b, c, h, w = x.size()
-#         assert len(x.shape) == 4
-#         b_size, n_channel, height, width = x.shape
-#         fold = self.squeeze_fold
-#
-#         squeezed = x.view(b_size, n_channel, height // fold,  fold,  width // fold,  fold)
-#         squeezed = squeezed.permute(0, 1, 3, 5, 2, 4).contiguous()
-#         out = squeezed.view(b_size, n_channel * fold * fold, height // fold, width // fold)
-#         return out
-#
-#     def _unsqueeze(self, x):
-#         assert len(x.shape) == 4
-#         b_size, n_channel, height, width = x.shape
-#         fold = self.squeeze_fold
-#         unsqueezed = x.view(b_size, n_channel // (fold * fold), fold, fold, height, width)
-#         unsqueezed = unsqueezed.permute(0, 1, 4, 2, 5, 3).contiguous()
-#         out = unsqueezed.view(b_size, n_channel // (fold * fold), height * fold, width * fold)
-#         return out
-
 
 class BlockOnGraph(nn.Module):
     def __init__(self, n_node, in_dim, hidden_dim_dict, n_flow, mask_row_size=1, mask_row_stride=1, affine=True):  #, conv_lu=True):
