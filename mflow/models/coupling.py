@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mflow.models.basic import GraphLinear, GraphConv, ActNorm, ActNorm2D
-
+from mflow.models import log_function
 
 # class AffineCoupling(nn.Module):
 #     def __init__(self, in_channel, hidden_channels, affine=True):  # filter_size=512,  --> hidden_channels =(512, 512)
@@ -78,7 +78,7 @@ from mflow.models.basic import GraphLinear, GraphConv, ActNorm, ActNorm2D
 #         return s, t
 
 
-class AffineCoupling(nn.Module):  # delete
+class AffineCoupling(nn.Module):  
     def __init__(self, in_channel, hidden_channels, affine=True, mask_swap=False):  # filter_size=512,  --> hidden_channels =(512, 512)
         super(AffineCoupling, self).__init__()
 
@@ -107,15 +107,23 @@ class AffineCoupling(nn.Module):  # delete
 
         if self.affine:
             # log_s, t = self.net(in_a).chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
-            s, t = self._s_t_function(in_a)
+            
+            ########################################## Original Moflow
+            # s, t = self._s_t_function(in_a) 
+            ##########################################
+            s, t, pi, mu, scale = self._s_t_function(in_a)
+            
             out_b = (in_b + t) * s   #  different affine bias , no difference to the log-det # (2,6,32,32) More stable, less error
             # out_b = in_b * s + t
             logdet = torch.sum(torch.log(torch.abs(s)).view(input.shape[0], -1), 1)
-        else:  # add coupling
-            # net_out = self.net(in_a)
-            _, t = self._s_t_function(in_a)
-            out_b = in_b + t
-            logdet = None
+            
+            ########################################## MixLogCDF from flow++
+            out = log_function.mixture_log_cdf(in_b, pi, mu, s).exp() # MixLogCDF(x;pi,mu,s)
+            out, scale_ldj = log_function.inverse(out)
+            out = (out + t) * s.exp()
+            logistic_ldj = log_function.mixture_log_pdf(in_b, pi, mu, s)
+            sldj = sldj + (logistic_ldj + scale_ldj + s).flatten(1).sum(-1)
+            ################################################################
 
         if self.mask_swap:
             result = torch.cat([out_b, in_a], 1)
@@ -144,6 +152,8 @@ class AffineCoupling(nn.Module):  # delete
 
         return result
 
+####################################################################### Original Moflow
+    """ 
     def _s_t_function(self, x):
         h = x
         for i in range(len(self.layers)-1):
@@ -164,6 +174,30 @@ class AffineCoupling(nn.Module):  # delete
         else:
             t = h
         return s, t
+    """ 
+####################################################################### 
+    def _s_t_function(self, x):
+        num_component = 6 # number of mixtures
+        h = x
+        for i in range(len(self.layers)-1):
+            h = self.layers[i](h)
+            h = self.norms[i](h)
+            # h = torch.tanh(h)  # tanh may be more stable?
+            h = torch.relu(h)  #
+        h = self.layers[-1](h)
+
+        s = None
+        if self.affine:
+            # residual net for doubling the channel. Do not use residual, unstable
+            log_s, t = h.chunk(2, 1)
+            # s = torch.sigmoid(log_s + 2)  # (2,6,32,32) # s != 0 and t can be arbitrary : Why + 2??? more stable, keep s != 0!!! exp is not stable
+            s = torch.sigmoid(log_s)  # works good when actnorm
+            # s = torch.tanh(log_s) # can not use tanh
+            # s = torch.sign(log_s) # lower reverse error if no actnorm, similar results when have actnorm
+        else:
+            t = h
+        pi, mu, scale = x.split((num_component, num_component, num_component), dim = 1) # get pi, mu, scale of mixLogCDF
+        return s, t, pi, mu, scale
 
 
 class GraphAffineCoupling(nn.Module):

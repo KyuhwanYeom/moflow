@@ -40,7 +40,7 @@ class MoFlowProp(nn.Module):
         self.latent_size = model.b_size + model.a_size
         self.hidden_size = hidden_size
 
-        vh = (self.latent_size,) + tuple(hidden_size) + (1,)
+        vh = (self.latent_size,) + tuple(hidden_size) + (1,) # 여기서 layer들을 추가(additional MLP)
         modules = []
         for i in range(len(vh)-1):
             modules.append(nn.Linear(vh[i], vh[i+1]))
@@ -70,7 +70,7 @@ class MoFlowProp(nn.Module):
 
 
 def fit_model(model, atomic_num_list, data, data_prop,  device, property_name='qed',
-              max_epochs=10, learning_rate=1e-3, weight_decay=1e-5):
+              max_epochs=10, learning_rate=1e-3, weight_decay=1e-5): #data_prop = ['qed', 'normalized plogp', 'smile']
     start = time.time()
     print("Start at Time: {}".format(time.ctime()))
     model = model.to(device)

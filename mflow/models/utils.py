@@ -294,6 +294,9 @@ def check_validity(adj, x, atomic_num_list, gpu=-1, return_unique=True,
 
 
 def check_novelty(gen_smiles, train_smiles, n_generated_mols): # gen: say 788, train: 120803
+    print("num of train_smiles : ", len(train_smiles))
+    print("num of generated mols : ", n_generated_mols)
+    print("num of generated smiles : ", len(gen_smiles))
     if len(gen_smiles) == 0:
         novel_ratio = 0.
     else:
