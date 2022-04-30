@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Draw
@@ -18,6 +19,9 @@ def split_channel(x):
     n = x.shape[1] // 2
     return x[:, :n], x[:, n:]
 
+def concat_elu(x):
+    """Concatenated ReLU (http://arxiv.org/abs/1603.05201), but with ELU."""
+    return F.elu(torch.cat((x, -x), dim=1))
 
 def get_graph_data(x, num_nodes, num_relations, num_features):
     """
