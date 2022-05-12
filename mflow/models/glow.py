@@ -32,7 +32,7 @@ class Flow(nn.Module):
             out, det1 = self.invconv(out)
         else:
             det1 = 0
-        out, det2 = self.coupling(out)
+        out, det2 = self.coupling(out, reverse=False)
 
         logdet = logdet + det1
         if det2 is not None:
@@ -41,7 +41,8 @@ class Flow(nn.Module):
         return out, logdet
 
     def reverse(self, output):
-        input = self.coupling.reverse(output)
+        #input = self.coupling.reverse(output) //original moflow
+        input = self.coupling(output, reverse=True)
         if self.invconv:
             input = self.invconv.reverse(input)
         input = self.actnorm.reverse(input)

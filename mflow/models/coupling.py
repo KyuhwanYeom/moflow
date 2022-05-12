@@ -101,63 +101,109 @@ class AffineCoupling(nn.Module):
 
 ####################################################################### Original Moflow
     """
-    def forward(self, input):
-        in_a, in_b = input.chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
+    def forward(self, x, reverse=False):
+        if reverse:
+            out_a, out_b = x.chunk(2, 1)
+            if self.mask_swap:
+                out_a, out_b = out_b, out_a
 
-        if self.mask_swap:
-            in_a, in_b = in_b, in_a
+            if self.affine:
+                s, t = self._s_t_function(out_a)
+                in_b = out_b / s - t  # More stable, less error   s must not equal to 0!!!
+                # in_b = (out_b - t) / s
+            else:
+                _, t = self._s_t_function(out_a)
+                in_b = out_b - t
 
-        if self.affine:
-            # log_s, t = self.net(in_a).chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
-            s, t = self._s_t_function(in_a)
-            out_b = (in_b + t) * s   #  different affine bias , no difference to the log-det # (2,6,32,32) More stable, less error
-            # out_b = in_b * s + t
-            logdet = torch.sum(torch.log(torch.abs(s)).view(input.shape[0], -1), 1)
-        else:  # add coupling
-            # net_out = self.net(in_a)
-            _, t = self._s_t_function(in_a)
-            out_b = in_b + t
-            logdet = None
+            if self.mask_swap:
+                result = torch.cat([in_b, out_a], 1)
+            else:
+                result = torch.cat([out_a, in_b], 1)
 
-        if self.mask_swap:
-            result = torch.cat([out_b, in_a], 1)
+            return result
         else:
-            result = torch.cat([in_a, out_b], 1)
+            in_a, in_b = x.chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
 
-        return result, logdet
+            if self.mask_swap:
+                in_a, in_b = in_b, in_a
+
+            if self.affine:
+                # log_s, t = self.net(in_a).chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
+                s, t = self._s_t_function(in_a)
+                out_b = (in_b + t) * s   #  different affine bias , no difference to the log-det # (2,6,32,32) More stable, less error
+                # out_b = in_b * s + t
+                logdet = torch.sum(torch.log(torch.abs(s)).view(x.shape[0], -1), 1)
+            else:  # add coupling
+                # net_out = self.net(in_a)
+                _, t = self._s_t_function(in_a)
+                out_b = in_b + t
+                logdet = None
+
+            if self.mask_swap:
+                result = torch.cat([out_b, in_a], 1)
+            else:
+                result = torch.cat([in_a, out_b], 1)
+
+            return result, logdet
     """
 ####################################################################### Moflow+
     #"""
-    def forward(self, input):
-        in_a, in_b = input.chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
-
-        if self.mask_swap:
-            in_a, in_b = in_b, in_a
-
-        if self.affine:
-            # log_s, t = self.net(in_a).chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
+    def forward(self, x, reverse=False):
+        
+        ########################################## Flow++
+    
             
-            ########################################## Flow++
+        if reverse:
+            out_a, out_b = x.chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
+            
+            s, t = self._s_t_function(out_a) # in_a = x1, in_b = x2
+            pi, mu, scale = self._s_t_function_new(out_a)
+            
+            if self.affine:
+                ########################################## MixLogCDF from flow++
+                out = out_a * s.mul(-1).exp() - t
+                out, scale_ldj = log_function.inverse(out, reverse=True)
+                out = out.clamp(1e-5, 1. - 1e-5)
+                out = log_function.mixture_inv_cdf(out, pi, mu, scale)
+                #logistic_ldj = log_function.mixture_log_pdf(out, pi, mu, s)
+                #sldj = sldj - (s + scale_ldj + logistic_ldj).flatten(1).sum(-1)
+                ################################################################
+                
+            if self.mask_swap:
+                result = torch.cat([out, out_a], 1)
+            else:
+                result = torch.cat([out_a, out], 1)
+
+            return result
+        else:
+            in_a, in_b = x.chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
+            
             s, t = self._s_t_function(in_a) # in_a = x1, in_b = x2
             pi, mu, scale = self._s_t_function_new(in_a)
             
-            ########################################## MixLogCDF from flow++
-            out_b = log_function.mixture_log_cdf(in_b, pi, mu, scale).exp() # MixLogCDF(x;pi,mu,s)
-            out_b, scale_ldj = log_function.inverse(out_b)
-            out_b = (out_b + t) * s.exp()
-            #out_b = (in_b + t) * s
-            logistic_ldj = log_function.mixture_log_pdf(in_b, pi, mu, scale)
-            logdet = (logistic_ldj + scale_ldj + s).flatten(1).sum(-1)
-            #logdet = torch.sum(torch.log(torch.abs(s)).view(input.shape[0], -1), 1)
-    
-            ################################################################
+            if self.mask_swap:
+                in_a, in_b = in_b, in_a
 
-        if self.mask_swap:
-            result = torch.cat([out_b, in_a], 1)
-        else:
-            result = torch.cat([in_a, out_b], 1)
+            if self.affine:
+                # log_s, t = self.net(in_a).chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
+                
+                ########################################## MixLogCDF from flow++
+                out_b = log_function.mixture_log_cdf(in_b, pi, mu, scale).exp() # MixLogCDF(x;pi,mu,s)
+                out_b, scale_ldj = log_function.inverse(out_b)
+                out_b = (out_b + t) * s.exp()
+                #out_b = (in_b + t) * s
+                logistic_ldj = log_function.mixture_log_pdf(in_b, pi, mu, scale)
+                logdet = (logistic_ldj + scale_ldj + s).flatten(1).sum(-1)
+                #logdet = torch.sum(torch.log(torch.abs(s)).view(input.shape[0], -1), 1)
+        
+                ################################################################
 
-        return result, logdet
+            if self.mask_swap:
+                result = torch.cat([out_b, in_a], 1)
+            else:
+                result = torch.cat([in_a, out_b], 1)
+
+            return result, logdet
     #"""
 ####################################################################### Original Moflow
     """
@@ -183,31 +229,6 @@ class AffineCoupling(nn.Module):
     """
 ####################################################################### Moflow+
     #"""
-    def reverse(self, output):
-        out_a, out_b = output.chunk(2, 1) # out_a = y1, out_b = y2
-        if self.mask_swap:
-            out_a, out_b = out_b, out_a
-
-        if self.affine:
-
-            s, t = self._s_t_function(out_a)
-            pi, mu, scale = self._s_t_function_new(out_a)
-            
-            ########################################## MixLogCDF from flow++
-            in_b = out_b * s.mul(-1).exp() - t
-            in_b, scale_ldj = log_function.inverse(in_b, reverse=True)
-            in_b = in_b.clamp(1e-5, 1. - 1e-5)
-            #out_b = log_function.mixture_inv_cdf(out_b, pi, mu, s)
-            #logistic_ldj = log_function.mixture_log_pdf(out, pi, mu, s)
-            #sldj = sldj - (s + scale_ldj + logistic_ldj).flatten(1).sum(-1)
-            ################################################################
-            
-        if self.mask_swap:
-            result = torch.cat([in_b, out_a], 1)
-        else:
-            result = torch.cat([out_a, in_b], 1)
-
-        return result
     #"""
 ####################################################################### Original Moflow
     #"""
