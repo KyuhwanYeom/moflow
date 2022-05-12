@@ -127,6 +127,7 @@ class AffineCoupling(nn.Module):
         return result, logdet
     """
 ####################################################################### Moflow+
+    #"""
     def forward(self, input):
         in_a, in_b = input.chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
 
@@ -137,23 +138,27 @@ class AffineCoupling(nn.Module):
             # log_s, t = self.net(in_a).chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
             
             ########################################## Flow++
-            s, t, pi, mu, scale = self._s_t_function(in_a)
+            s, t = self._s_t_function(in_a) # in_a = x1, in_b = x2
+            pi, mu, scale = self._s_t_function_new(in_a)
             
             ########################################## MixLogCDF from flow++
-            out = log_function.mixture_log_cdf(in_b, pi, mu, scale).exp() # MixLogCDF(x;pi,mu,s)
-            out, scale_ldj = log_function.inverse(out)
-            out = (out + t) * s.exp()
+            out_b = log_function.mixture_log_cdf(in_b, pi, mu, scale).exp() # MixLogCDF(x;pi,mu,s)
+            out_b, scale_ldj = log_function.inverse(out_b)
+            out_b = (out_b + t) * s.exp()
+            #out_b = (in_b + t) * s
             logistic_ldj = log_function.mixture_log_pdf(in_b, pi, mu, scale)
             logdet = (logistic_ldj + scale_ldj + s).flatten(1).sum(-1)
+            #logdet = torch.sum(torch.log(torch.abs(s)).view(input.shape[0], -1), 1)
+    
             ################################################################
 
         if self.mask_swap:
-            result = torch.cat([out, in_a], 1)
+            result = torch.cat([out_b, in_a], 1)
         else:
-            result = torch.cat([in_a, out], 1)
+            result = torch.cat([in_a, out_b], 1)
 
         return result, logdet
-
+    #"""
 ####################################################################### Original Moflow
     """
     def reverse(self, output):
@@ -177,36 +182,35 @@ class AffineCoupling(nn.Module):
         return result
     """
 ####################################################################### Moflow+
-
+    #"""
     def reverse(self, output):
-        out_a, out_b = output.chunk(2, 1)
+        out_a, out_b = output.chunk(2, 1) # out_a = y1, out_b = y2
         if self.mask_swap:
             out_a, out_b = out_b, out_a
 
         if self.affine:
 
-            s, t, pi, mu, scale= self._s_t_function(out_a)
+            s, t = self._s_t_function(out_a)
+            pi, mu, scale = self._s_t_function_new(out_a)
             
-            in_b = out_b / s - t  # More stable, less error   s must not equal to 0!!!
-            # in_b = (out_b - t) / s
             ########################################## MixLogCDF from flow++
-            out = in_b * s.mul(-1).exp() - t
-            out, scale_ldj = log_function.inverse(out, reverse=True)
-            out = out.clamp(1e-5, 1. - 1e-5)
-            #out = log_function.mixture_inv_cdf(out, pi, mu, s)
+            in_b = out_b * s.mul(-1).exp() - t
+            in_b, scale_ldj = log_function.inverse(in_b, reverse=True)
+            in_b = in_b.clamp(1e-5, 1. - 1e-5)
+            #out_b = log_function.mixture_inv_cdf(out_b, pi, mu, s)
             #logistic_ldj = log_function.mixture_log_pdf(out, pi, mu, s)
             #sldj = sldj - (s + scale_ldj + logistic_ldj).flatten(1).sum(-1)
             ################################################################
             
         if self.mask_swap:
-            result = torch.cat([in_b, out], 1)
+            result = torch.cat([in_b, out_a], 1)
         else:
-            result = torch.cat([out, in_b], 1)
+            result = torch.cat([out_a, in_b], 1)
 
         return result
-    
+    #"""
 ####################################################################### Original Moflow
-    """
+    #"""
     def _s_t_function(self, x):
         h = x
         for i in range(len(self.layers)-1):
@@ -227,10 +231,10 @@ class AffineCoupling(nn.Module):
         else:
             t = h
         return s, t
-    """
+    #"""
 ####################################################################### Moflow+
-    
-    def _s_t_function(self, x):
+    #"""
+    def _s_t_function_new(self, x):
         num_component = 4 # number of mixtures
         b, c, h0, w = x.size()
         h = x
@@ -239,21 +243,12 @@ class AffineCoupling(nn.Module):
             h = self.norms[i](h)
             # h = torch.tanh(h)  # tanh may be more stable?
             h = torch.relu(h)  #
-        tmp_x = self.layers[-1](h)
-        s = None
-        if self.affine:
-            # residual net for doubling the channel. Do not use residual, unstable
-            log_s, t = tmp_x.chunk(2, 1)
-            # s = torch.sigmoid(log_s + 2)  # (2,6,32,32) # s != 0 and t can be arbitrary : Why + 2??? more stable, keep s != 0!!! exp is not stable
-            s = torch.sigmoid(log_s)  # works good when actnorm
-            # s = torch.tanh(log_s) # can not use tanh
-            # s = torch.sign(log_s) # lower reverse error if no actnorm, similar results when have actnorm
         x = h.view(b, -1, c, h0, w)            
         pi, mu, scales = x.split((num_component, num_component, num_component), dim = 1) # get pi, mu, scale of mixLogCDF
         scales = scales.clamp(min=-7)  # From the code in original Flow++ paper
         
-        return s, t, pi, mu, scales
-    
+        return pi, mu, scales
+    #"""
 ######################################################################
 
 
