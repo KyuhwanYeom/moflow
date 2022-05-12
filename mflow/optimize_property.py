@@ -817,6 +817,7 @@ if __name__ == '__main__':
             print('Constrained optimization:')
             constrain_optimization_smiles(model, device, args.data_name, property_name, train_prop, args.topk,   # train_prop
                                       atomic_num_list, args.debug, sim_cutoff=args.sim_cutoff)
+        
 
         print('Total Time {:.2f} seconds'.format(time.time() - start))
 
