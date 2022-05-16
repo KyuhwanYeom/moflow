@@ -98,6 +98,7 @@ class AffineCoupling(nn.Module):
             self.norms.append(nn.BatchNorm2d(h))  # , momentum=0.9 may change norm later, where to use norm? for the residual? or the sum
             # self.norms.append(ActNorm(in_channel=h, logdet=False)) # similar but not good
             last_h = h
+        self.layers.append(nn.Conv2d(36, 360, kernel_size=3, padding=1))
 
 ####################################################################### Original Moflow
     """
@@ -156,8 +157,11 @@ class AffineCoupling(nn.Module):
         if reverse:
             out_a, out_b = x.chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
             
-            s, t = self._s_t_function(out_a) # in_a = x1, in_b = x2
-            pi, mu, scale = self._s_t_function_new(out_a)
+            if self.mask_swap:
+                out_a, out_b = out_b, out_a
+                
+
+            s, t, pi, mu, scale = self._s_t_function_new(out_a)
             
             if self.affine:
                 ########################################## MixLogCDF from flow++
@@ -177,15 +181,14 @@ class AffineCoupling(nn.Module):
             return result
         else:
             in_a, in_b = x.chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
-            
-            s, t = self._s_t_function(in_a) # in_a = x1, in_b = x2
-            pi, mu, scale = self._s_t_function_new(in_a)
-            
+        
             if self.mask_swap:
                 in_a, in_b = in_b, in_a
 
             if self.affine:
-                # log_s, t = self.net(in_a).chunk(2, 1)  # (2,12,32,32) --> (2,6,32,32), (2,6,32,32)
+                
+
+                s, t, pi, mu, scale = self._s_t_function_new(in_a)
                 
                 ########################################## MixLogCDF from flow++
                 out_b = log_function.mixture_log_cdf(in_b, pi, mu, scale).exp() # MixLogCDF(x;pi,mu,s)
@@ -194,7 +197,7 @@ class AffineCoupling(nn.Module):
                 #out_b = (in_b + t) * s
                 logistic_ldj = log_function.mixture_log_pdf(in_b, pi, mu, scale)
                 logdet = (logistic_ldj + scale_ldj + s).flatten(1).sum(-1)
-                #logdet = torch.sum(torch.log(torch.abs(s)).view(input.shape[0], -1), 1)
+                #logdet = torch.sum(torch.log(torch.abs(s)).view(x.shape[0], -1), 1)
         
                 ################################################################
 
@@ -240,7 +243,7 @@ class AffineCoupling(nn.Module):
             # h = torch.tanh(h)  # tanh may be more stable?
             h = torch.relu(h)  #
         h = self.layers[-1](h)
-
+        
         s = None
         if self.affine:
             # residual net for doubling the channel. Do not use residual, unstable
@@ -256,19 +259,23 @@ class AffineCoupling(nn.Module):
 ####################################################################### Moflow+
     #"""
     def _s_t_function_new(self, x):
-        num_component = 4 # number of mixtures
+        num_component = 6 # number of mixtures
         b, c, h0, w = x.size()
         h = x
-        for i in range(len(self.layers)-1):
+        for i in range(len(self.layers)-2):
             h = self.layers[i](h)
             h = self.norms[i](h)
             # h = torch.tanh(h)  # tanh may be more stable?
             h = torch.relu(h)  #
+        h = self.layers[-2](h)
+        h = self.layers[-1](h)
         x = h.view(b, -1, c, h0, w)            
-        pi, mu, scales = x.split((num_component, num_component, num_component), dim = 1) # get pi, mu, scale of mixLogCDF
+        s, t, pi, mu, scales = x.split((1, 1, num_component, num_component, num_component), dim = 1) # get pi, mu, scale of mixLogCDF
         scales = scales.clamp(min=-7)  # From the code in original Flow++ paper
+        s = s.squeeze(1)
+        t = t.squeeze(1)
         
-        return pi, mu, scales
+        return s, t, pi, mu, scales
     #"""
 ######################################################################
 
