@@ -47,12 +47,12 @@ python data_preprocess.py --data_name zinc250k
 #### Training model for QM9 dataset:
 ```
 cd mflow
-python train_model.py --data_name qm9  --batch_size 256  --max_epochs 200 --gpu 0  --debug True  --save_dir=results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1  --b_n_flow 10  --b_hidden_ch 128,128  --a_n_flow 27 --a_hidden_gnn 64  --a_hidden_lin 128,64  --mask_row_size_list 1 --mask_row_stride_list 1 --noise_scale 0.6 --b_conv_lu 1  2>&1 | tee qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1.log
+python train_model.py --data_name qm9  --batch_size 256  --max_epochs 80 --gpu 0  --debug True  --save_dir=results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1  --b_n_flow 10  --b_hidden_ch 216,216  --a_n_flow 27 --a_hidden_gnn 64  --a_hidden_lin 128,64  --mask_row_size_list 1 --mask_row_stride_list 1 --noise_scale 0.6 --b_conv_lu 1  2>&1 | tee qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1.log
 ```
 #### Training model for zinc250k dataset:
 ```
 cd mflow
-python train_model.py  --data_name zinc250k  --batch_size  256  --max_epochs 200 --gpu 0  --debug True  --save_dir=results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --b_n_flow 10  --b_hidden_ch 512,512  --a_n_flow 38  --a_hidden_gnn 256  --a_hidden_lin  512,64   --mask_row_size_list 1 --mask_row_stride_list 1  --noise_scale 0.6  --b_conv_lu 2  2>&1 | tee zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask.log
+python train_model.py  --data_name zinc250k  --batch_size  256  --max_epochs 80 --gpu 0  --debug True  --save_dir=results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --b_n_flow 10  --b_hidden_ch 512,512  --a_n_flow 38  --a_hidden_gnn 256  --a_hidden_lin  512,64   --mask_row_size_list 1 --mask_row_stride_list 1  --noise_scale 0.6  --b_conv_lu 2  2>&1 | tee zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask.log
 ```
 #### Or downloading and  using our trained models in 
 ```
@@ -65,7 +65,7 @@ https://drive.google.com/drive/folders/1runxQnF3K_VzzJeWQZUH8VRazAGjZFNF
 #### To reconstruct QM9 dataset:
 ```
 cd mflow
-python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_200 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 256 --reconstruct  2>&1 | tee qm9_reconstruct_results.txt
+python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 256 --reconstruct  2>&1 | tee qm9_reconstruct_results.txt
 ```
 
 ```
@@ -86,7 +86,7 @@ Invertible model! 100% reconstruction!
 #### To reconstruct zinc250k dataset:
 ```
 cd mflow
-python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_200 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 256  --reconstruct   2>&1 | tee zinc250k_reconstruct_results.txt
+python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_80 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 256  --reconstruct   2>&1 | tee zinc250k_reconstruct_results.txt
 ```
 ##### Results:
 ```
@@ -102,7 +102,7 @@ Invertible model! 100% reconstruction!
 #### Random Generation from sampling from latent space, QM9 model
 10000 samples * 5 times:
 ```
-python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_200 --gpu 0 --data_name qm9 --hyperparams-path moflow-params.json --batch-size 10000 --temperature 0.85 --delta 0.05 --n_experiments 5 --save_fig false --correct_validity true 2>&1 | tee qm9_random_generation.log
+python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9 --hyperparams-path moflow-params.json --batch-size 10000 --temperature 0.85 --delta 0.05 --n_experiments 5 --save_fig false --correct_validity true 2>&1 | tee qm9_random_generation.log
 ```
 #####  Results
 ```
@@ -124,7 +124,7 @@ Task random generation done! Time 185.09 seconds, Data: Tue Sep 29 11:20:15 2020
 #### Random Generation from sampling from latent space, zinc250k model
 10000 samples * 5 times:
 ```
-python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_200 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json   --temperature 0.85  --batch-size 10000 --n_experiments 5  --save_fig false --correct_validity true 2>&1 | tee zinc250k_random_generation.log
+python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_80 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json   --temperature 0.85  --batch-size 10000 --n_experiments 5  --save_fig false --correct_validity true 2>&1 | tee zinc250k_random_generation.log
 ```
 #####  Results
 ```
@@ -148,21 +148,21 @@ Task1 random generation done! Time 537.13 seconds, Data: Tue Sep 29 11:36:12 202
 #### Interpolation in the latent space, QM9 model
 interpolation between 2 molecules (molecular graphs)
 ```
-python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_200 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.65   --int2point --inter_times 50  --correct_validity true 2>&1 | tee qm9_visualization_int2point.log
+python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.65   --int2point --inter_times 50  --correct_validity true 2>&1 | tee qm9_visualization_int2point.log
 ```
 interpolation in a grid of molecules (molecular graphs)
 ```
-python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_200 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.65 --delta 5  --intgrid  --inter_times 40  --correct_validity true 2>&1 | tee tee qm9_visualization_intgrid.log
+python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.65 --delta 5  --intgrid  --inter_times 40  --correct_validity true 2>&1 | tee tee qm9_visualization_intgrid.log
 ```
 
 #### Interpolation in the latent space, zinc250k model
 interpolation between 2 molecules (molecular graphs)
 ```
-python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_200 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.8 --delta 0.5  --n_experiments 0 --correct_validity true   --int2point  --inter_times 10  2>&1 | tee zinc250k_visualization_int2point.log
+python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_80 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.8 --delta 0.5  --n_experiments 0 --correct_validity true   --int2point  --inter_times 10  2>&1 | tee zinc250k_visualization_int2point.log
 ```
 interpolation in a grid of molecules (molecular graphs)
 ```
-python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_200 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.8 --delta 5  --n_experiments 0 --correct_validity true   --intgrid --inter_times 2  2>&1 | tee zinc250k_visualization_intgrid.log
+python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_80 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.8 --delta 5  --n_experiments 0 --correct_validity true   --intgrid --inter_times 2  2>&1 | tee zinc250k_visualization_intgrid.log
 ```
 #### Some illustrations
 ![interpolation](mflow/fig/output.png)
@@ -174,7 +174,7 @@ python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow
 #### Optimizing zinc250k w.r.t QED property
 #### Training an additional MLP from latent space to QED property
 ```
-python optimize_property.py -snapshot model_snapshot_epoch_200  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0 --max_epochs 3  --weight_decay 1e-3  --data_name zinc250k  --hidden 16,  --temperature 1.0  --property_name qed 2>&1 | tee  training_optimize_zinc250k_qed.log
+python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0 --max_epochs 3  --weight_decay 1e-3  --data_name zinc250k  --hidden 16,  --temperature 1.0  --property_name qed 2>&1 | tee  training_optimize_zinc250k_qed.log
 # Output: a molecular property prediction model for optimization, say named as qed_model.pt
 # e.g. saving qed regression model to: results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask/qed_model.pt
 # Train and save model done! Time 477.87 seconds 
@@ -190,7 +190,7 @@ https://drive.google.com/drive/folders/1runxQnF3K_VzzJeWQZUH8VRazAGjZFNF
 ```
 #### To optimize existing molecules to get novel molecules with optimized QED scores
 ```
-python optimize_property.py -snapshot model_snapshot_epoch_200  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0   --data_name zinc250k   --property_name qed --topk 2000  --property_model_path qed_model.pt --debug false  --topscore 2>&1 | tee  zinc250k_top_qed_optimized.log
+python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0   --data_name zinc250k   --property_name qed --topk 2000  --property_model_path qed_model.pt --debug false  --topscore 2>&1 | tee  zinc250k_top_qed_optimized.log
 # Input: --property_model_path qed_model.pt is the regression model
 # Output: dump a ranked list of generated optimized and novel molecules w.r.t qed
 ```
@@ -200,7 +200,7 @@ python optimize_property.py -snapshot model_snapshot_epoch_200  --hyperparams_pa
 #### Constrained Optimizing zinc250k w.r.t plogp(or qed) + similarity property
 #### to train an additional MLP from latent space to plogp property
 ```
-python optimize_property.py -snapshot model_snapshot_epoch_200  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0  --max_epochs 3  --weight_decay 1e-2  --data_name zinc250k  --hidden 16,  --temperature 1.0  --property_name plogp 2>&1 | tee training_optimize_zinc250k_plogp.log
+python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0  --max_epochs 3  --weight_decay 1e-2  --data_name zinc250k  --hidden 16,  --temperature 1.0  --property_name plogp 2>&1 | tee training_optimize_zinc250k_plogp.log
 # Output: a molecular property prediction model for optimization, say named as plogp_model.pt
 # e.g. saving plogp  regression model to: results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask/plogp_model.pt
 # Train and save model done! Time 473.74 seconds
@@ -212,7 +212,7 @@ python optimize_property.py -snapshot model_snapshot_epoch_200  --hyperparams_pa
 ```
 #### To optimize existing molecules to get novel molecules with optimized plogp scores and constrained similarity
 ```
-python optimize_property.py -snapshot model_snapshot_epoch_200  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0    --data_name zinc250k    --property_name plogp --topk 800 --property_model_path qed_model.pt   --consopt  --sim_cutoff 0 2>&1 | tee  zinc250k_constrain_optimize_plogp.log
+python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0    --data_name zinc250k    --property_name plogp --topk 800 --property_model_path qed_model.pt   --consopt  --sim_cutoff 0 2>&1 | tee  zinc250k_constrain_optimize_plogp.log
 # Input: --property_model_path qed_model.pt or plogp_model.pt is the regression model
          --sim_cutoff 0 (or 0.2, 0.4 etc for similarity)
          --topk 800 (choose first 800 molecules with worset property values for improving)
