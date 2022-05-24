@@ -81,22 +81,6 @@ reconstruction_rate for all the train data:1.0 in 120803
 Invertible model! 100% reconstruction!
 ```
 
-
-
-#### To reconstruct zinc250k dataset:
-```
-cd mflow
-python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_80 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 256  --reconstruct   2>&1 | tee zinc250k_reconstruct_results.txt
-```
-##### Results:
-```
-249455 in total, 224568  training data, 24887  testing data, 256 batchsize, train/batchsize 877.21875
-...
-iter/total: 877/878, reconstruction_rate:1.0
-reconstruction_rate for all the train data:1.0 in 224568
-Invertible model! 100% reconstruction!
-```
-
 ### 3.2-Experiment: Random generation  
 
 #### Random Generation from sampling from latent space, QM9 model
@@ -122,28 +106,6 @@ Task random generation done! Time 185.09 seconds, Data: Tue Sep 29 11:20:15 2020
 # Output details are in qm9_random_generation.log
 ```
 
-#### Random Generation from sampling from latent space, zinc250k model
-10000 samples * 5 times:
-```
-python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_80 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json   --temperature 0.85  --batch-size 10000 --n_experiments 5  --save_fig false --correct_validity true 2>&1 | tee zinc250k_random_generation.log
-```
-#####  Results
-```
-validity: mean=100.00%, sd=0.00%, vals=[100.0, 100.0, 99.99, 100.0, 100.0]
-novelty: mean=100.00%, sd=0.00%, vals=[100.0, 100.0, 100.0, 100.0, 100.0]
-uniqueness: mean=99.99%, sd=0.01%, vals=[100.0, 99.98, 100.0, 99.99, 99.99]
-abs_novelty: mean=99.99%, sd=0.01%, vals=[100.0, 99.98, 99.99, 99.99, 99.99]
-abs_uniqueness: mean=99.99%, sd=0.01%, vals=[100.0, 99.98, 99.99, 99.99, 99.99]
-Task1 random generation done! Time 537.13 seconds, Data: Tue Sep 29 11:36:12 2020
-# Above is just one random result. Tuning:
-    --batch-size for the number of  mols to be generated
-    --temperature for different generation results, 
-    --correct_validity false for results without correction
-    --save_fig true for figures of generated mols, set batch-size a resoanble number for dump figures 
-# more details see parameter configuration in generate.py
-# Output details are in qm9_random_generation.log
-```
-
 ### 3.3-Experiment: Interpolation generation & visualization
 
 #### Interpolation in the latent space, QM9 model
@@ -156,18 +118,8 @@ interpolation in a grid of molecules (molecular graphs)
 python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.65 --delta 5  --intgrid  --inter_times 40  --correct_validity true 2>&1 | tee tee qm9_visualization_intgrid.log
 ```
 
-#### Interpolation in the latent space, zinc250k model
-interpolation between 2 molecules (molecular graphs)
-```
-python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_80 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.8 --delta 0.5  --n_experiments 0 --correct_validity true   --int2point  --inter_times 10  2>&1 | tee zinc250k_visualization_int2point.log
-```
-interpolation in a grid of molecules (molecular graphs)
-```
-python generate.py --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask  -snapshot model_snapshot_epoch_80 --gpu  0  --data_name zinc250k --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.8 --delta 5  --n_experiments 0 --correct_validity true   --intgrid --inter_times 2  2>&1 | tee zinc250k_visualization_intgrid.log
-```
 #### Some illustrations
 ![interpolation](mflow/fig/output.png)
-
 
 ![interpolation](mflow/fig/generated_interpolation_molecules_seed0_white.png)
 
