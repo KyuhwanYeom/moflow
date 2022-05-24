@@ -106,11 +106,12 @@ python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_conv
 ```
 #####  Results
 ```
+novelty: 99.980%, abs novelty: 98.330%
 validity: mean=100.00%, sd=0.00%, vals=[100.0, 100.0, 100.0, 100.0, 100.0]
-novelty: mean=98.05%, sd=0.12%, vals=[98.07731024763439, 98.11472930738985, 97.88434414668548, 97.95239055880573, 98.21877830331086]
-uniqueness: mean=99.26%, sd=0.09%, vals=[99.33999999999999, 99.19, 99.26, 99.14, 99.37]
-abs_novelty: mean=97.32%, sd=0.18%, vals=[97.43, 97.32, 97.16, 97.11, 97.6]
-abs_uniqueness: mean=99.26%, sd=0.09%, vals=[99.33999999999999, 99.19, 99.26, 99.14, 99.37]
+novelty: mean=99.99%, sd=0.01%, vals=[99.98983533238463, 99.9898363654843, 100.0, 100.0, 99.97966446365022]
+uniqueness: mean=98.26%, sd=0.24%, vals=[98.38, 98.39, 97.78, 98.42, 98.35000000000001]
+abs_novelty: mean=98.26%, sd=0.24%, vals=[98.37, 98.38, 97.78, 98.42, 98.33]
+abs_uniqueness: mean=98.26%, sd=0.24%, vals=[98.38, 98.39, 97.78, 98.42, 98.35000000000001]
 Task random generation done! Time 185.09 seconds, Data: Tue Sep 29 11:20:15 2020
 # Above is just one random result. Tuning:
     --batch-size for the number of  mols to be generated
