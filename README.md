@@ -40,7 +40,6 @@ To generate molecular graphs from SMILES strings
 ```
 cd data
 python data_preprocess.py --data_name qm9
-python data_preprocess.py --data_name zinc250k
 ```
 
 ## 2. Model Training
@@ -49,16 +48,6 @@ python data_preprocess.py --data_name zinc250k
 cd mflow
 python train_model.py --data_name qm9  --batch_size 256  --max_epochs 80 --gpu 0  --debug True  --save_dir=results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1  --b_n_flow 10  --b_hidden_ch 216,216  --a_n_flow 27 --a_hidden_gnn 64  --a_hidden_lin 128,64  --mask_row_size_list 1 --mask_row_stride_list 1 --noise_scale 0.6 --b_conv_lu 1  2>&1 | tee qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1.log
 ```
-#### Training model for zinc250k dataset:
-```
-cd mflow
-python train_model.py  --data_name zinc250k  --batch_size  256  --max_epochs 80 --gpu 0  --debug True  --save_dir=results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --b_n_flow 10  --b_hidden_ch 512,512  --a_n_flow 38  --a_hidden_gnn 256  --a_hidden_lin  512,64   --mask_row_size_list 1 --mask_row_stride_list 1  --noise_scale 0.6  --b_conv_lu 2  2>&1 | tee zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask.log
-```
-#### Or downloading and  using our trained models in 
-```
-https://drive.google.com/drive/folders/1runxQnF3K_VzzJeWQZUH8VRazAGjZFNF 
-```
-
 ## 3. Model Testing
 
 ### 3.1-Experiment: Random generation  
@@ -187,6 +176,8 @@ More configurations please refer to our codes optimize_property.py and the optim
 #### One illustration of optimizing plogp
 ![optimiation plogp](mflow/fig/copt.png)
 
-
-
+### 3.4-Experiment: Diversity Measurement
+```
+python calculate_diversity.py --csv_dir plogp_constrain_optimization.csv
+```
 
