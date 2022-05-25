@@ -86,13 +86,9 @@ Task random generation done! Time 185.09 seconds, Data: Wed May 18 17:44:15 2022
 # Output details are in qm9_random_generation.log
 ```
 
-### 3.3-Experiment: Interpolation generation & visualization
+### 3.2-Experiment: Interpolation generation & visualization
 
 #### Interpolation in the latent space, QM9 model
-interpolation between 2 molecules (molecular graphs)
-```
-python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.65   --int2point --inter_times 50  --correct_validity true 2>&1 | tee qm9_visualization_int2point.log
-```
 interpolation in a grid of molecules (molecular graphs)
 ```
 python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.65 --delta 5  --intgrid  --inter_times 40  --correct_validity true 2>&1 | tee tee qm9_visualization_intgrid.log
@@ -103,13 +99,13 @@ python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_conv
 
 ![interpolation](mflow/fig/generated_interpolation_molecules_seed0_white.png)
 
-### 3.4-Experiment: Molecular optimization & constrained optimization
-#### Optimizing zinc250k w.r.t QED property
-#### Training an additional MLP from latent space to QED property
+### 3.3-Experiment: Molecular optimization & constrained optimization
+#### Optimizing QM9 w.r.t plogp property
+#### Training an additional MLP from latent space to plogp property
 ```
-python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0 --max_epochs 3  --weight_decay 1e-3  --data_name zinc250k  --hidden 16,  --temperature 1.0  --property_name qed 2>&1 | tee  training_optimize_zinc250k_qed.log
-# Output: a molecular property prediction model for optimization, say named as qed_model.pt
-# e.g. saving qed regression model to: results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask/qed_model.pt
+python optimize_property.py -snapshot model_snapshot_epoch_125  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1   --gpu 0 --max_epochs 3  --weight_decay 1e-3  --data_name qm9  --hidden 16,  --temperature 1.0  --property_name plogp 2>&1 | tee  training_optimize_qm9_plogp.log
+# Output: a molecular property prediction model for optimization, say named as plogp_model.pt
+# e.g. saving qed regression model to: results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1/plogp_model.pt
 # Train and save model done! Time 477.87 seconds 
 # Can tune:
 #         --max_epochs 3  
