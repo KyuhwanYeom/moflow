@@ -61,27 +61,7 @@ https://drive.google.com/drive/folders/1runxQnF3K_VzzJeWQZUH8VRazAGjZFNF
 
 ## 3. Model Testing
 
-### 3.1-Experiment: reconstruction  
-#### To reconstruct QM9 dataset:
-```
-cd mflow
-python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 256 --reconstruct  2>&1 | tee qm9_reconstruct_results.txt
-```
-
-```
-### Results
-Tips:  results can be printed & dumped to a .txt file by  "2>&1 | tee qm9_reconstruct_results.txt"
-133885 in total, 120803  training data, 13082  testing data, 256 batchsize, train/batchsize 471.88671875
-...
-iter/total: 468/472, reconstruction_rate:1.0
-iter/total: 469/472, reconstruction_rate:1.0
-iter/total: 470/472, reconstruction_rate:1.0
-iter/total: 471/472, reconstruction_rate:1.0
-reconstruction_rate for all the train data:1.0 in 120803
-Invertible model! 100% reconstruction!
-```
-
-### 3.2-Experiment: Random generation  
+### 3.1-Experiment: Random generation  
 
 #### Random Generation from sampling from latent space, QM9 model
 10000 samples * 5 times:
@@ -96,7 +76,7 @@ novelty: mean=99.99%, sd=0.01%, vals=[99.98983533238463, 99.9898363654843, 100.0
 uniqueness: mean=98.26%, sd=0.24%, vals=[98.38, 98.39, 97.78, 98.42, 98.35000000000001]
 abs_novelty: mean=98.26%, sd=0.24%, vals=[98.37, 98.38, 97.78, 98.42, 98.33]
 abs_uniqueness: mean=98.26%, sd=0.24%, vals=[98.38, 98.39, 97.78, 98.42, 98.35000000000001]
-Task random generation done! Time 185.09 seconds, Data: Tue Sep 29 11:20:15 2020
+Task random generation done! Time 185.09 seconds, Data: Wed May 18 17:44:15 2022
 # Above is just one random result. Tuning:
     --batch-size for the number of  mols to be generated
     --temperature for different generation results, 
