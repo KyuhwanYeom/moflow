@@ -1,4 +1,4 @@
-# moflow
+# moflow_plus
 
 Please refer to our paper:
 
