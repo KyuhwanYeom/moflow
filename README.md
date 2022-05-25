@@ -141,10 +141,10 @@ python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_pat
 ```
 #### To optimize existing molecules to get novel molecules with optimized plogp scores and constrained similarity
 ```
-python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0    --data_name zinc250k    --property_name plogp --topk 800 --property_model_path qed_model.pt   --consopt  --sim_cutoff 0 2>&1 | tee  zinc250k_constrain_optimize_plogp.log
+python optimize_property.py -snapshot model_snapshot_epoch_125  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1   --gpu 0    --data_name qm9    --property_name plogp --topk 2000 --property_model_path plogp_model.pt   --consopt  --sim_cutoff 0 2>&1 | tee  qm9_constrain_optimize_plogp.log
 # Input: --property_model_path qed_model.pt or plogp_model.pt is the regression model
          --sim_cutoff 0 (or 0.2, 0.4 etc for similarity)
-         --topk 800 (choose first 800 molecules with worset property values for improving)
+         --topk 2000 (choose first 2000 molecules with worset property values for improving)
 # Output: 
 # Using qed_model.pt for optimizing plogp with 
 # Because qed and plogp have some correlations, here we use both qed/plogp model for 2 optimization tasks
