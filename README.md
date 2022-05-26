@@ -178,6 +178,6 @@ More configurations please refer to our codes optimize_property.py and the optim
 
 ### 3.4-Experiment: Diversity Measurement
 ```
-python calculate_diversity.py --csv_dir plogp_constrain_optimization.csv
+python calc_diversity.py --csv_dir plogp_constrain_optimization.csv
 ```
 
