@@ -89,7 +89,6 @@ python optimize_property.py -snapshot model_snapshot_epoch_125  --hyperparams_pa
 #         --hidden 16
 # etc.
 ```
-```
 #### To optimize existing molecules to get novel molecules with optimized plogp scores and constrained similarity
 ```
 python optimize_property.py -snapshot model_snapshot_epoch_125  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1   --gpu 0    --data_name qm9    --property_name plogp --topk 2000 --property_model_path plogp_model.pt   --consopt  --sim_cutoff 0 2>&1 | tee  qm9_constrain_optimize_plogp.log
