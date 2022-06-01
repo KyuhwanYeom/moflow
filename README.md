@@ -89,27 +89,6 @@ python optimize_property.py -snapshot model_snapshot_epoch_125  --hyperparams_pa
 #         --hidden 16
 # etc.
 ```
-#### To optimize existing molecules to get novel molecules with optimized QED scores
-```
-python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0   --data_name zinc250k   --property_name qed --topk 2000  --property_model_path qed_model.pt --debug false  --topscore 2>&1 | tee  zinc250k_top_qed_optimized.log
-# Input: --property_model_path qed_model.pt is the regression model
-# Output: dump a ranked list of generated optimized and novel molecules w.r.t qed
-```
-#### Illustrations of molecules with top QED
-![Optimization](mflow/fig/top_qed2.png)
-
-#### Constrained Optimizing zinc250k w.r.t plogp(or qed) + similarity property
-#### to train an additional MLP from latent space to plogp property
-```
-python optimize_property.py -snapshot model_snapshot_epoch_80  --hyperparams_path moflow-params.json --batch_size 256 --model_dir results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask   --gpu 0  --max_epochs 3  --weight_decay 1e-2  --data_name zinc250k  --hidden 16,  --temperature 1.0  --property_name plogp 2>&1 | tee training_optimize_zinc250k_plogp.log
-# Output: a molecular property prediction model for optimization, say named as plogp_model.pt
-# e.g. saving plogp  regression model to: results/zinc250k_512t2cnn_256gnn_512-64lin_10flow_19fold_convlu2_38af-1-1mask/plogp_model.pt
-# Train and save model done! Time 473.74 seconds
-# Can tune:
-#         --max_epochs 3  
-#         --weight_decay 1e-2  
-#        --hidden 16
-#etc.
 ```
 #### To optimize existing molecules to get novel molecules with optimized plogp scores and constrained similarity
 ```
