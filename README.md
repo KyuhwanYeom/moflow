@@ -75,20 +75,7 @@ Task random generation done! Time 185.09 seconds, Data: Wed May 18 17:44:15 2022
 # Output details are in qm9_random_generation.log
 ```
 
-### 3.2-Experiment: Interpolation generation & visualization
-
-#### Interpolation in the latent space, QM9 model
-interpolation in a grid of molecules (molecular graphs)
-```
-python generate.py --model_dir results/qm9_64gnn_128-64lin_1-1mask_0d6noise_convlu1 -snapshot model_snapshot_epoch_80 --gpu 0 --data_name qm9  --hyperparams-path moflow-params.json --batch-size 1000  --temperature 0.65 --delta 5  --intgrid  --inter_times 40  --correct_validity true 2>&1 | tee tee qm9_visualization_intgrid.log
-```
-
-#### Some illustrations
-![interpolation](mflow/fig/output.png)
-
-![interpolation](mflow/fig/generated_interpolation_molecules_seed0_white.png)
-
-### 3.3-Experiment: Molecular optimization & constrained optimization
+### 3.2-Experiment: Molecular optimization & constrained optimization
 #### Optimizing QM9 w.r.t plogp property
 #### Training an additional MLP from latent space to plogp property
 ```
@@ -101,10 +88,6 @@ python optimize_property.py -snapshot model_snapshot_epoch_125  --hyperparams_pa
 #         --weight_decay 1e-3  
 #         --hidden 16
 # etc.
-```
-#### Or downloading and  using our trained models in 
-```
-https://drive.google.com/drive/folders/1runxQnF3K_VzzJeWQZUH8VRazAGjZFNF 
 ```
 #### To optimize existing molecules to get novel molecules with optimized QED scores
 ```
@@ -176,7 +159,7 @@ More configurations please refer to our codes optimize_property.py and the optim
 #### One illustration of optimizing plogp
 ![optimiation plogp](mflow/fig/copt.png)
 
-### 3.4-Experiment: Diversity Measurement
+### 3.3-Experiment: Diversity Measurement
 ```
 python calc_diversity.py --csv_dir plogp_constrain_optimization.csv
 ```
